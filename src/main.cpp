@@ -1,12 +1,20 @@
+#include "log.hpp"
+
 #include <iostream>
 #include <filesystem>
 #include <vector>
+#include <memory>
 #include <string>
+#include <sstream>
+#include <algorithm>
+#include <thread>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
+
+using namespace comic_creator;
 
 struct Image {
 	std::string name;
@@ -35,7 +43,7 @@ std::filesystem::path createDirectory( const std::filesystem::path &dir )
 std::shared_ptr< Image > loadImage( const std::filesystem::path &path ) noexcept
 {
 	if ( !std::filesystem::exists( path ) ) {
-		std::cerr << path << "Does not exists\n";
+		Log::error( path, " does not exist" );
 		return nullptr;
 	}
 
@@ -51,7 +59,7 @@ std::shared_ptr< Image > loadImage( const std::filesystem::path &path ) noexcept
 	);
 
 	if ( pixels == nullptr ) {
-		std::cerr << "Failed to load image " << path << "\n";
+		Log::error( "Failed to load image ", path );
 		return nullptr;
 	}
 
@@ -60,7 +68,7 @@ std::shared_ptr< Image > loadImage( const std::filesystem::path &path ) noexcept
 
 	stbi_image_free( pixels );
 
-	std::cout << "Loaded " << path << "\n";
+	Log::debug( "Loaded ", path );
 
 	return image;
 }
@@ -76,7 +84,7 @@ void saveImage( std::shared_ptr< Image > const &image, std::filesystem::path con
 		image->width * image->channels
 	);
 
-	std::cout << "Saved " << path.c_str() << "\n";
+	Log::debug( "Saved ", path );
 }
 
 void cutImage( const std::filesystem::path &path, const std::filesystem::path &outDir )
@@ -87,7 +95,7 @@ void cutImage( const std::filesystem::path &path, const std::filesystem::path &o
 
 std::filesystem::path createOnlineImages( const std::filesystem::path &src ) noexcept
 {
-	std::cout << "Creating images for ONLINE publishing\n";
+	Log::trace( "Creating images for online publishing" );
 
 	auto outDir = createDirectory( getRootDirectory() / "online" );
 	for ( const auto &entry : std::filesystem::directory_iterator( src ) ) {
@@ -102,7 +110,8 @@ std::filesystem::path createOnlineImages( const std::filesystem::path &src ) noe
 
 std::filesystem::path createPrintingImages( const std::filesystem::path &src )
 {
-	std::cout << "Creating images for PRINTING\n";
+	Log::trace( "Creating images for printing" );
+
 	auto dst = createDirectory( getRootDirectory() / "print" );
 
 	return dst;
@@ -110,12 +119,12 @@ std::filesystem::path createPrintingImages( const std::filesystem::path &src )
 
 int main( int argc, char **argv )
 {
-	std::cout << "ComicCreator " << COMIC_CREATOR_VERSION << "\n";
+	Log::info( "ComicCreator ", COMIC_CREATOR_VERSION );
 
 	auto currentDir = std::filesystem::current_path();
 	auto pagesDir = currentDir / "pages";
 	if ( !std::filesystem::exists( pagesDir ) ) {
-		std::cerr << "Cannot find " << pagesDir << "\n";
+		Log::error( "Cannot find ", pagesDir );
 		return -1;
 	}
 

@@ -17,6 +17,11 @@
 
 using namespace comic_creator;
 
+struct PageSize {
+	float width;
+	float height;
+};
+
 struct Image {
 	std::string name;
 	std::vector< unsigned char > data;
@@ -91,7 +96,43 @@ void saveImage( std::shared_ptr< Image > const &image, std::filesystem::path con
 void cutImage( const std::filesystem::path &path, const std::filesystem::path &outDir )
 {
 	auto src = loadImage( path );
-	saveImage( src, outDir / path.filename() );
+
+	auto pageSize = PageSize {
+		.width = 29.70f,
+		.height = 42.00f
+	};
+	auto trimSize = PageSize{
+		.width = 27.00f,
+		.height = 34.00f
+	};
+
+	auto w0 = int( src->width );
+	auto w1 = int( w0 * trimSize.width / pageSize.width );
+	auto h0 = int( src->height );
+	auto h1 = int( h0 * trimSize.height / pageSize.height );
+	auto startX = int( 0.5f * ( w0 - w1 ) );
+	auto startY = int( 0.5f * ( h0 - h1 ) );
+
+	auto dst = std::make_shared< Image >();
+	dst->name = src->name;
+	dst->width = w1;
+	dst->height = h1;
+	dst->channels = src->channels;
+	dst->data.resize( dst->width * dst->height * dst->channels );
+
+	for ( auto y1 = 0; y1 < h1; y1++ ) {
+		for ( auto x1 = 0; x1 < w1; x1++ ) {
+			for ( auto c = 0; c < dst->channels; c++ ) {
+				auto x0 = startX + x1;
+				auto y0 = startY + y1;
+				auto idx0 = ( y0 * w0 + x0 ) * src->channels + c;
+				auto idx1 = ( y1 * w1 + x1 ) * dst->channels + c;
+				dst->data[ idx1 ] = src->data[ idx0 ];
+			}
+		}
+	}
+	
+	saveImage( dst, outDir / path.filename() );
 }
 
 std::filesystem::path createOnlineImages( const std::filesystem::path &src ) noexcept

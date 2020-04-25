@@ -8,6 +8,7 @@
 #include <sstream>
 #include <algorithm>
 #include <thread>
+#include <future>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -98,11 +99,23 @@ std::filesystem::path createOnlineImages( const std::filesystem::path &src ) noe
 	Log::trace( "Creating images for online publishing" );
 
 	auto outDir = createDirectory( getRootDirectory() / "online" );
+	std::vector< std::future< void >> tasks;
 	for ( const auto &entry : std::filesystem::directory_iterator( src ) ) {
 		if ( std::filesystem::is_directory( entry ) ) {
 			continue;
 		}
-		cutImage( entry.path(), outDir );
+		tasks.push_back(
+			std::async(
+				std::launch::async,
+				cutImage,
+				entry.path(),
+				outDir
+			)
+		);
+	}
+
+	for ( auto &t : tasks ) {
+		t.get();
 	}
 
 	return outDir;

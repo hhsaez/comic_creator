@@ -65,7 +65,9 @@ std::vector< Path > fetchPages( void )
         if ( std::filesystem::is_directory( entry ) ) {
             continue;
         }
-        ret.push_back( entry.path() );
+        if ( entry.path().extension() == ".png" ) {
+            ret.push_back( entry.path() );
+        }
     }
 
     std::sort( std::begin( ret ), std::end( ret ) );
@@ -113,6 +115,9 @@ void cutImage( const std::filesystem::path &path,
                const Settings &settings )
 {
     auto src = loadImage( path );
+    if ( src == nullptr ) {
+        return;
+    }
 
     auto pageSize = settings.pageSize;
     auto trimSize = settings.trimSize;
@@ -151,6 +156,9 @@ void resizeImage( const std::filesystem::path &path,
                   const Settings &settings )
 {
     auto src = loadImage( path );
+    if ( src == nullptr ) {
+        return;
+    }
 
     auto w0 = int( src->width );
     auto w1 = int( 1024 );
@@ -287,7 +295,7 @@ int main( int argc, char **argv )
         return -1;
     }
 
-    // createOnlineImages( pages, settings );
+    createOnlineImages( pages, settings );
     createPrintingImages( pages, settings );
 
     return 0;

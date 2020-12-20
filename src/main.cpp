@@ -237,6 +237,11 @@ void printPages( const Path &left, const Path &right, const Path &dst, const Set
     saveImage( page, dst );
 }
 
+bool isEven( int n )
+{
+    return n % 2 == 0;
+}
+
 Path createPrintingImages( const PathArray &pages,
                            const Settings &settings ) noexcept
 {
@@ -252,8 +257,11 @@ Path createPrintingImages( const PathArray &pages,
     std::vector< std::future< void > > tasks;
 
     for ( auto i = 0; i < pages.size() / 2; i++ ) {
-        auto left = pages[ pages.size() - 1 - i ];
-        auto right = pages[ i ];
+        auto first = pages[ i ];
+        auto last = pages[ pages.size() - 1 - i ];
+
+        auto left = isEven( i ) ? last : first;
+        auto right = isEven( i ) ? first : last;
 
         std::stringstream ss;
         ss << "page_" << i << ".png";
@@ -279,8 +287,8 @@ int main( int argc, char **argv )
         return -1;
     }
 
-    createOnlineImages( pages, settings );
-    // createPrintingImages( pages, settings );
+    // createOnlineImages( pages, settings );
+    createPrintingImages( pages, settings );
 
     return 0;
 }
